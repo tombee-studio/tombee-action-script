@@ -1,0 +1,6 @@
+obj/
+out/
+lib/
+.vscode/
+test.cpp
+.DS_Store
