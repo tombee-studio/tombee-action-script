@@ -31,7 +31,13 @@ Parser::parse_script(vector<Token>& tokens, int& pos) {
 Event *
 Parser::parse_event(vector<Token>& tokens, int& pos) {
     Statement *statement;
-    if(consume(tokens, pos, Token::KW_UPDATE)) {
+    if(consume(tokens, pos, Token::KW_INIT)) {
+        if(consume(tokens, pos, ':')) {
+            return new InitEvent(parse_statement(tokens, pos));
+        } else {
+            throw ParseError("expected ':'");
+        }
+    } else if(consume(tokens, pos, Token::KW_UPDATE)) {
         if(consume(tokens, pos, ':')) {
             return new UpdateEvent(parse_statement(tokens, pos));
         } else {
