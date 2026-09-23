@@ -1,5 +1,7 @@
 #include "../include/ast.hpp"
 
+namespace tas {
+
 Program::Program() {}
 
 Program::~Program() {
@@ -20,3 +22,5 @@ void
 Program::add(string name, Ast* ast) {
     _registered[name] = ast;
 }
+
+} // namespace tas

@@ -6,6 +6,9 @@
 #endif
 
 #include <iostream>
+#include <string>
+
+namespace tas {
 using namespace std;
 
 struct Token {
@@ -58,3 +61,5 @@ struct Token {
 
     operator string();
 };
+
+} // namespace tas

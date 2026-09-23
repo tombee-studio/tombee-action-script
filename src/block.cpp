@@ -1,5 +1,7 @@
 #include "../include/ast.hpp"
 
+namespace tas {
+
 void
 Block::print(int _t) {
     cout << "{" << endl;
@@ -30,3 +32,5 @@ void
 Block::add(Ast* ast) {
     _statements.push_back(ast);
 }
+
+} // namespace tas

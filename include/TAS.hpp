@@ -1,6 +1,9 @@
 #pragma once
 
-#include "cpu.hpp"
 #include "primitive.hpp"
-#include "parser.hpp"
 #include "tac.hpp"
+#include "token.hpp"
+#include "ast.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
+#include "cpu.hpp"

@@ -1,5 +1,7 @@
 #include "../include/cpu.hpp"
 
+namespace tas {
+
 void 
 CPU::run() {
     TACOperand code = _codes[_pc];
@@ -241,3 +243,5 @@ CPU::find(string id) {
     }
     return NULL;
 }
+
+} // namespace tas

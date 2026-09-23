@@ -1,9 +1,14 @@
 #pragma once
 
 #include <cassert>
+#ifndef ASSERT
 #define ASSERT(x) assert(x);
+#endif
 
 #include <iostream>
+#include <string>
+
+namespace tas {
 using namespace std;
 
 struct Primitive {
@@ -50,3 +55,5 @@ struct Primitive {
     template<class T>
     operator T() { return (T)data; }
 };
+
+} // namespace tas

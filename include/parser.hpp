@@ -1,8 +1,13 @@
 #pragma once
 
 #include <cstdlib>
+#include <vector>
+#include <stdexcept>
 #include "lexer.hpp"
 #include "ast.hpp"
+
+namespace tas {
+using namespace std;
 
 class ParseError: public runtime_error {
 public:
@@ -33,3 +38,5 @@ public:
 private:
     Token* consume(vector<Token>&, int&, int);
 };
+
+} // namespace tas

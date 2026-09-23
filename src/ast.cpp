@@ -1,5 +1,7 @@
 #include "../include/ast.hpp"
 
+namespace tas {
+
 void 
 Ast::tab(int _t) {
     for(int i = 0; i < _t; i++) {
@@ -34,8 +36,9 @@ InitEvent::print_tac() {
 void 
 InitEvent::tac(vector<TACOperand>& operands, vector<int>& entries) {
     if(entries.size() < 2) { entries.resize(2); }
-    entries[0] = 0;
+    entries[0] = operands.size();
     _statement->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
 }
 
 void 
@@ -727,3 +730,5 @@ void
 VarExp::ltac(vector<TACOperand>& operands, vector<int>& entries) {
     operands.push_back(TACOperand::make(TACOperand::PUSH, Primitive::NONE, Primitive::make_id(_id)));
 }
+
+} // namespace tas

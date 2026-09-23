@@ -2,6 +2,8 @@
 
 #include "primitive.hpp"
 
+namespace tas {
+
 struct TACOperand {
     enum {
         EXIT = -1,
@@ -40,3 +42,5 @@ struct TACOperand {
 
     void print();
 };
+
+} // namespace tas

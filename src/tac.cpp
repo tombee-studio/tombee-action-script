@@ -1,5 +1,7 @@
 #include "../include/tac.hpp"
 
+namespace tas {
+
 TACOperand 
 TACOperand::make(int mnemonic, int type, Primitive value) {
     TACOperand operand;
@@ -121,3 +123,5 @@ TACOperand::print() {
     }
     cout << endl;
 }
+
+} // namespace tas

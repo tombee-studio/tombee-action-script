@@ -4,8 +4,10 @@
 #include <map>
 #include <vector>
 #include <tuple>
-#include "../include/primitive.hpp"
-#include "../include/tac.hpp"
+#include "primitive.hpp"
+#include "tac.hpp"
+
+namespace tas {
 using namespace std;
 
 class Ast;
@@ -447,3 +449,5 @@ public:
 
     void add(string name, Ast *ast);
 };
+
+} // namespace tas

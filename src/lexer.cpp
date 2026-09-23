@@ -1,5 +1,7 @@
 #include "../include/lexer.hpp"
 
+namespace tas {
+
 Lexer* 
 Lexer::getInstance() {
     static Lexer *lexer = new Lexer();
@@ -172,3 +174,5 @@ Lexer::tokenizeStr(string& line, int& pos) {
     tokens.push_back(token);
     return true;
 }
+
+} // namespace tas

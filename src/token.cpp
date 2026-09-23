@@ -1,4 +1,7 @@
 #include "../include/token.hpp"
+#include <cstdio>
+
+namespace tas {
 
 Token 
 Token::make_int(int ival) {
@@ -91,7 +94,9 @@ Token::operator string() {
         return "[-=]";
     default:
         char buffer[16];
-        sprintf(buffer, "[%c]", type);
+        snprintf(buffer, sizeof(buffer), "[%c]", type);
         return buffer;
     }
 }
+
+} // namespace tas

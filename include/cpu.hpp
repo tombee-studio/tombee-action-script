@@ -4,8 +4,11 @@
 #include <vector>
 #include <map>
 #include <cstdio>
+#include <stdexcept>
 #include "primitive.hpp"
 #include "tac.hpp"
+
+namespace tas {
 using namespace std;
 
 class RuntimeError: public runtime_error {
@@ -51,3 +54,5 @@ private:
 
     Primitive* find(string id);
 };
+
+} // namespace tas

@@ -1,5 +1,7 @@
 #include "../include/primitive.hpp"
 
+namespace tas {
+
 Primitive 
 Primitive::make_int(int ival) {
     Primitive p;
@@ -223,7 +225,7 @@ Primitive::operator+(const Primitive& other) {
     }
 }
 
-Primitive&
+Primitive& 
 Primitive::operator-(const Primitive& other) {
     if(this->type == other.type) {
         switch(this->type) {
@@ -325,7 +327,7 @@ Primitive::operator%(const Primitive& other) {
     }
 }
 
-Primitive&
+Primitive& 
 Primitive::operator[](int index) {
     if(this->type == ARRAY) {
         if(index < size) {
@@ -390,3 +392,5 @@ Primitive::operator string() {
         return "none";
     }
 }
+
+} // namespace tas

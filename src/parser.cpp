@@ -1,5 +1,7 @@
 #include "../include/parser.hpp"
 
+namespace tas {
+
 Parser*
 Parser::getInstance() {
     static Parser *parser = new Parser();
@@ -272,3 +274,5 @@ Parser::consume(vector<Token>& tokens, int& pos, int type) {
         return NULL;
     }
 }
+
+} // namespace tas
