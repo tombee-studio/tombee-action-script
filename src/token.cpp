@@ -68,6 +68,8 @@ Token::operator string() {
         return "[<INIT>]";
     case KW_UPDATE:
         return "[<UPDATE>]";
+    case KW_RENDER:
+        return "[<RENDER>]";
     case KW_INTERRUPT:
         return "[<INTERRUPT>]";
     case KW_END:

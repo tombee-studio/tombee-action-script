@@ -73,6 +73,15 @@ public:
     virtual void tac(vector<TACOperand>&, vector<int>&);
 };
 
+class RenderEvent: public Event {
+public:
+    RenderEvent(Statement *statement): Event(statement) {}
+    virtual void print(int);
+    virtual void print_tac();
+
+    virtual void tac(vector<TACOperand>&, vector<int>&);
+};
+
 class InterruptEvent: public Event {
     Expression *_cond;
 protected:
@@ -340,6 +349,21 @@ protected:
     virtual ~DivExp() { _left->free(); _right->free(); Expression::~Expression(); }
 public:
     DivExp(Expression *left, Expression *right): _left(left), _right(right) {}
+
+    virtual void print(int tab);
+    virtual void print_tac();
+    virtual void print_ltac();
+    virtual void tac(vector<TACOperand>&, vector<int>&);
+    virtual void ltac(vector<TACOperand>&, vector<int>&);
+};
+
+class ModExp: public Expression {
+    Expression *_left;
+    Expression *_right;
+protected:
+    virtual ~ModExp() { _left->free(); _right->free(); Expression::~Expression(); }
+public:
+    ModExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
     virtual void print(int tab);
     virtual void print_tac();

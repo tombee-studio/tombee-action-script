@@ -4,3 +4,4 @@ lib/
 .vscode/
 test.cpp
 .DS_Store
+*.o

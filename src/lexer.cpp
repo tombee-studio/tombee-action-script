@@ -67,6 +67,7 @@ Lexer::tokenize(string& line, int& pos) {
     if(tokenizeKeyword(line, pos, Token::KW_CASE, "case")) return;
     if(tokenizeKeyword(line, pos, Token::KW_INIT, "init")) return;
     if(tokenizeKeyword(line, pos, Token::KW_UPDATE, "update")) return;
+    if(tokenizeKeyword(line, pos, Token::KW_RENDER, "render")) return;
     if(tokenizeKeyword(line, pos, Token::KW_INTERRUPT, "interrupt")) return;
     if(tokenizeKeyword(line, pos, Token::KW_INT, "int")) return;
     if(tokenizeKeyword(line, pos, Token::KW_FLOAT, "float")) return;
