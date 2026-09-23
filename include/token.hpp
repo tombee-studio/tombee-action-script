@@ -27,6 +27,7 @@ struct Token {
         KW_CASE,
         KW_INIT,
         KW_UPDATE,
+        KW_RENDER,
         KW_INTERRUPT,
         KW_END,
         OP_EQ,

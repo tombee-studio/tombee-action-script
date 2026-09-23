@@ -43,6 +43,12 @@ Parser::parse_event(vector<Token>& tokens, int& pos) {
         } else {
             throw ParseError("expected ':'");
         }
+    } else if(consume(tokens, pos, Token::KW_RENDER)) {
+        if(consume(tokens, pos, ':')) {
+            return new RenderEvent(parse_statement(tokens, pos));
+        } else {
+            throw ParseError("expected ':'");
+        }
     } else if(consume(tokens, pos, Token::KW_INTERRUPT)) {
         Expression *cond = parse_expression(tokens, pos);
         if(consume(tokens, pos, ':')) {
@@ -202,6 +208,8 @@ Parser::parse_mul(vector<Token>& tokens, int& pos) {
         return new MulExp(exp, parse_mul(tokens, pos));
     } else if(consume(tokens, pos, '/')) {
         return new DivExp(exp, parse_mul(tokens, pos));
+    } else if(consume(tokens, pos, '%')) {
+        return new ModExp(exp, parse_mul(tokens, pos));
     } else {
         return exp;
     }

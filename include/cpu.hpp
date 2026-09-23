@@ -21,10 +21,10 @@ class CPU {
     map<string, Primitive (*)(CPU*, int, void*)> _functions;
     vector<map<string, Primitive>> _table;
     vector<int> loops;
-    Primitive _stack[32];
+    Primitive _stack[512];
     vector<TACOperand> _codes;
 public:
-    CPU(): _pc(0), _sp(1), _isExit(false) {}
+    CPU(): _pc(0), _sp(0), _isExit(false) {}
 
     void run();
     bool isExit() { return _isExit; }
@@ -37,7 +37,14 @@ public:
     void print();
     void push(Primitive);
     Primitive pop();
-    void start(int pc) { _pc = pc; _isExit = false; }
+    void start(int pc) {
+        _pc = pc;
+        _sp = 0;
+        _isExit = false;
+        _table.clear();
+        _table.push_back(map<string, Primitive>());
+        loops.clear();
+    }
 private:
     void expr(TACOperand);
     void load();

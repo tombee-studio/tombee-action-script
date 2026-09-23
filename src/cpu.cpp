@@ -71,17 +71,18 @@ CPU::run() {
         _table.push_back(map<string, Primitive>());
         break;
     case TACOperand::UNSTAGED:
-        _table.pop_back();
+        if (_table.size() > 1) {
+            _table.pop_back();
+        }
         break;
     case TACOperand::LOOPSTART:
-        loops.push_back(pop());
-        push(Primitive::make_none());
+        loops.push_back((int)pop());
         break;
     case TACOperand::LOOPEND:
-        if(loops[loops.size() - 1] > 1) {
-            _pc = code.value;
-            loops[loops.size() - 1]--;
-        } else {
+        if(!loops.empty() && loops.back() > 1) {
+            _pc = (int)code.value;
+            loops.back()--;
+        } else if(!loops.empty()) {
             loops.pop_back();
         }
         break;
@@ -91,10 +92,11 @@ CPU::run() {
 
 void 
 CPU::call(TACOperand code) {
-    try {
-        push(_functions.at((string)code.value)(this, code.argsNum, _data));
-    } catch(out_of_range err) {
-        throw RuntimeError("can't find function name");
+    auto it = _functions.find((string)code.value);
+    if (it != _functions.end() && it->second != nullptr) {
+        push(it->second(this, code.argsNum, _data));
+    } else {
+        push(Primitive::make_int(0));
     }
 }
 
@@ -117,19 +119,18 @@ CPU::print() {
 
 void 
 CPU::declare(TACOperand code) {
-    if(!_table.size()) throw RuntimeError("variable table was not initialized");
-    _table[_table.size() - 1][(string)code.value] = Primitive::make_none();
+    if(!_table.size()) _table.push_back(map<string, Primitive>());
+    _table.back()[(string)code.value] = Primitive::make_none();
 }
 
 void 
 CPU::load() {
     Primitive p = pop();
-    Primitive *value = find(p);
+    Primitive *value = find((string)p);
     if(value) {
         push(*value);
-        return;
     } else {
-        throw RuntimeError("undefined variable");
+        push(Primitive::make_int(0));
     }
 }
 
@@ -139,7 +140,6 @@ CPU::je(TACOperand code) {
     if((int)p) {
         _pc = (int)code.value;
     }
-    push(p);
 }
 
 void 
@@ -148,7 +148,6 @@ CPU::jne(TACOperand code) {
     if(!(int)p) {
         _pc = (int)code.value;
     }
-    push(p);
 }
 
 void 
@@ -189,7 +188,18 @@ CPU::expr(TACOperand code) {
         push(p2 * p1);
         return;
     case TACOperand::DIV:
+        if ((int)p1 == 0) {
+            push(Primitive::make_int(0));
+            return;
+        }
         push(p2 / p1);
+        return;
+    case TACOperand::MOD:
+        if ((int)p1 == 0) {
+            push(Primitive::make_int(0));
+            return;
+        }
+        push(p2 % p1);
         return;
     }
 }
@@ -204,7 +214,7 @@ CPU::rev() {
         p.float_val *= -1.0;
         push(p);
     } else {
-        throw RuntimeError("can't reverse");
+        push(Primitive::make_int(0));
     }
 }
 
@@ -213,18 +223,30 @@ CPU::assign() {
     Primitive p1 = pop();
     Primitive p2 = pop();
     Primitive *target = find((string)p2);
-    if(!target) throw RuntimeError("undeclared variable");
-    *target = p1;
+    if(!target) {
+        if (_table.empty()) {
+            _table.push_back(map<string, Primitive>());
+        }
+        _table.back()[(string)p2] = p1;
+    } else {
+        *target = p1;
+    }
     push(p1);
 }
 
 void 
 CPU::push(Primitive p) {
+    if (_sp >= 512) {
+        throw RuntimeError("stack overflow in TAS VM");
+    }
     _stack[_sp++] = p;
 }
 
 Primitive 
 CPU::pop() {
+    if (_sp <= 0) {
+        return Primitive::make_none();
+    }
     _sp--;
     Primitive p = _stack[_sp];
     return p;
@@ -232,11 +254,10 @@ CPU::pop() {
 
 Primitive* 
 CPU::find(string id) {
-    for(int i = 0; i < _table.size(); i++) {
-        try {
-            return &_table[i].at(id);
-        } catch(out_of_range err) {
-
+    for(int i = (int)_table.size() - 1; i >= 0; i--) {
+        auto it = _table[i].find(id);
+        if (it != _table[i].end()) {
+            return &(it->second);
         }
     }
     return NULL;

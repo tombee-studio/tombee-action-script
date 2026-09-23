@@ -20,6 +20,7 @@ struct TACOperand {
         SUB,
         MUL,
         DIV,
+        MOD,
         REV,
         LOAD,
         CALL,

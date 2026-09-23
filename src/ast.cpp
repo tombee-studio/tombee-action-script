@@ -33,9 +33,10 @@ InitEvent::print_tac() {
 
 void 
 InitEvent::tac(vector<TACOperand>& operands, vector<int>& entries) {
-    if(entries.size() < 2) { entries.resize(2); }
+    if(entries.size() < 3) { entries.resize(3); }
     entries[0] = 0;
     _statement->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
 }
 
 void 
@@ -53,8 +54,29 @@ UpdateEvent::print_tac() {
 
 void 
 UpdateEvent::tac(vector<TACOperand>& operands, vector<int>& entries) {
-    if(entries.size() < 2) { entries.resize(2); }
+    if(entries.size() < 3) { entries.resize(3); }
     entries[1] = operands.size();
+    _statement->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
+}
+
+void 
+RenderEvent::print(int _tab) {
+    tab(_tab);
+    cout << "render: ";
+    _statement->print(_tab);
+}
+
+void 
+RenderEvent::print_tac() {
+    cout << "render: " << endl;
+    _statement->print_tac();
+}
+
+void 
+RenderEvent::tac(vector<TACOperand>& operands, vector<int>& entries) {
+    if(entries.size() < 3) { entries.resize(3); }
+    entries[2] = operands.size();
     _statement->tac(operands, entries);
     operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
 }
@@ -80,7 +102,7 @@ InterruptEvent::print_tac() {
 
 void 
 InterruptEvent::tac(vector<TACOperand>& operands, vector<int>& entries) {
-    if(entries.size() < 2) { entries.resize(2); }
+    if(entries.size() < 3) { entries.resize(3); }
     entries.push_back(operands.size());
     _cond->tac(operands, entries);
     operands.push_back(TACOperand::make(TACOperand::JE, Primitive::NONE, Primitive::make_int(2)));
@@ -131,7 +153,6 @@ IfSt::print_tac() {
 
 void 
 IfSt::tac(vector<TACOperand>& operands, vector<int>& entries) {
-    operands.push_back(TACOperand::make(TACOperand::POP, Primitive::NONE, Primitive::make_int(0)));
     _cond->tac(operands, entries);
     operands.push_back(TACOperand::make(TACOperand::JNE, Primitive::NONE, Primitive::make_int(0)));
     int jumpTo = operands.size() - 1;
@@ -161,7 +182,6 @@ Loop::print_tac() {}
 
 void 
 Loop::tac(vector<TACOperand>& codes, vector<int>& entries) {
-    codes.push_back(TACOperand::make(TACOperand::POP, Primitive::NONE, Primitive::make_int(0)));
     _times->tac(codes, entries);
     codes.push_back(TACOperand::make(TACOperand::LOOPSTART, Primitive::NONE, Primitive::make_none()));
     int top = codes.size() - 1;
@@ -178,14 +198,14 @@ ExpressionSt::print(int _tab) {
 
 void 
 ExpressionSt::print_tac() {
-    cout << "POP" << endl;
     _exp->print_tac();
+    cout << "POP" << endl;
 }
 
 void 
 ExpressionSt::tac(vector<TACOperand>& operands, vector<int>& entries) {
-    operands.push_back(TACOperand::make(TACOperand::POP, Primitive::NONE, Primitive::make_int(0)));
     _exp->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::POP, Primitive::NONE, Primitive::make_int(0)));
 }
 
 void 
@@ -591,6 +611,35 @@ DivExp::tac(vector<TACOperand>& operands, vector<int>& entries) {
 
 void 
 DivExp::ltac(vector<TACOperand>& operands, vector<int>& entries) {
+}
+
+void 
+ModExp::print(int tab) {
+    _left->print(tab);
+    cout << "%";
+    _right->print(tab);
+}
+
+void 
+ModExp::print_tac() {
+    _left->print_tac();
+    _right->print_tac();
+    cout << "MOD" << endl;
+}
+
+void 
+ModExp::print_ltac() {
+}
+
+void 
+ModExp::tac(vector<TACOperand>& operands, vector<int>& entries) {
+    _left->tac(operands, entries);
+    _right->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::MOD, Primitive::NONE, Primitive::make_int(0)));
+}
+
+void 
+ModExp::ltac(vector<TACOperand>& operands, vector<int>& entries) {
 }
 
 void 
