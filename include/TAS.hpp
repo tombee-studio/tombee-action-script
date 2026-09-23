@@ -7,3 +7,4 @@
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "cpu.hpp"
+#include "bytecode.hpp"

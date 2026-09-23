@@ -28,12 +28,10 @@ struct Token {
         KW_REF,
         KW_VAR,
         KW_CASE,
-        KW_INIT,
-        KW_UPDATE,
-        KW_RENDER,
         KW_INTERRUPT,
         KW_END,
-        OP_EQ,
+        OP_AT = '@',
+        OP_EQ = 256,
         OP_NE,
         OP_AND,
         OP_OR,
@@ -45,6 +43,8 @@ struct Token {
         OP_DEC,
         COMMENT,
     };
+
+    static constexpr size_t MAX_IDENTIFIER_LENGTH = 128;
 
     int type;
 

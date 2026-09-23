@@ -103,6 +103,18 @@ TACOperand::print() {
     case LOOPEND:
         cout << "LOOPEND";
         break;
+    case GLOBAL_DECL:
+        cout << "GLOBAL_DECL";
+        break;
+    case DELAY:
+        cout << "DELAY";
+        break;
+    case DISPATCH:
+        cout << "DISPATCH";
+        break;
+    case YIELD:
+        cout << "YIELD";
+        break;
     }
     switch(type) {
     case Primitive::INT:

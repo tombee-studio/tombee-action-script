@@ -33,6 +33,10 @@ struct TACOperand {
         UNSTAGED,
         LOOPSTART,
         LOOPEND,
+        GLOBAL_DECL,
+        DELAY,
+        DISPATCH,
+        YIELD,
     };
     int mnemonic;
     int type;

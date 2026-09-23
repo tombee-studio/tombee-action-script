@@ -1,5 +1,7 @@
 #include "../include/primitive.hpp"
 
+using namespace tas;
+
 int
 main() {
     const char* test_id = "test";

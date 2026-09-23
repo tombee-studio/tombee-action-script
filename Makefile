@@ -1,29 +1,36 @@
 FORCE:
-.PHONY: FORCE
+.PHONY: FORCE all test library clean
 
 SUFFIX   	= .cpp
 SRCDIR   	= ./src
 OBJDIR   	= ./obj
 TESTDIR  	= ./test
+LIBDIR   	= ./lib
 SRCS  		= $(wildcard $(SRCDIR)/*$(SUFFIX))
 OBJS  		= $(SRCS:$(SRCDIR)%$(SUFFIX)=$(OBJDIR)%.o)
 TESTS 		= $(wildcard $(TESTDIR)/*$(SUFFIX))
-TARGETS 	= $(basename $(TESTS))
 
-obj/%.o: src/%.cpp
-	g++ --std=c++17 -c ./src/$*.cpp -o ./obj/$*.o
+all: $(OBJS) library
 
-$(TESTS): $(OBJS) FORCE
-	@g++ --std=c++17 $@ ./obj/*.o
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
+
+$(LIBDIR):
+	mkdir -p $(LIBDIR)
+
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
+	g++ --std=c++17 -c $< -o $@
+
+$(TESTS): $(OBJS) FORCE | $(OBJDIR) $(LIBDIR)
+	@g++ --std=c++17 $@ $(OBJS) -o a.out
 	@./a.out "test.tas" "enemy001"
 	@echo "$@ <<< OK"
+	@rm -f a.out
 
 test: $(TESTS)
-	@g++ --std=c++17 test.cpp obj/*.o
-	@./a.out
 
-library: $(OBJS)
-	ar r lib/libtombeeactionscript.a obj/*.o
+library: $(OBJS) | $(LIBDIR)
+	ar r $(LIBDIR)/libtombeeactionscript.a $(OBJS)
 
 clean:
-	rm -rf a.out
+	rm -rf a.out $(OBJDIR) $(LIBDIR)

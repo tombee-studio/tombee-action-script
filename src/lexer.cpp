@@ -1,4 +1,5 @@
 #include "../include/lexer.hpp"
+#include <sstream>
 
 namespace tas {
 
@@ -26,6 +27,21 @@ Lexer::lex(string fileName) {
 
     tokens.push_back(Token::make_token(Token::TK_EOF));
 
+    return tokens;
+}
+
+vector<Token>
+Lexer::lex_string(string text) {
+    tokens.clear();
+    stringstream ss(text);
+    string line;
+    while(getline(ss, line)) {
+        int pos = 0;
+        while(pos < line.size()) {
+            tokenize(line, pos);
+        }
+    }
+    tokens.push_back(Token::make_token(Token::TK_EOF));
     return tokens;
 }
 
@@ -65,9 +81,6 @@ Lexer::tokenize(string& line, int& pos) {
     if(tokenizeKeyword(line, pos, Token::KW_LOOP, "loop")) return;
     if(tokenizeKeyword(line, pos, Token::KW_SHOT, "shot")) return;
     if(tokenizeKeyword(line, pos, Token::KW_CASE, "case")) return;
-    if(tokenizeKeyword(line, pos, Token::KW_INIT, "init")) return;
-    if(tokenizeKeyword(line, pos, Token::KW_UPDATE, "update")) return;
-    if(tokenizeKeyword(line, pos, Token::KW_RENDER, "render")) return;
     if(tokenizeKeyword(line, pos, Token::KW_INTERRUPT, "interrupt")) return;
     if(tokenizeKeyword(line, pos, Token::KW_INT, "int")) return;
     if(tokenizeKeyword(line, pos, Token::KW_FLOAT, "float")) return;
@@ -77,13 +90,12 @@ Lexer::tokenize(string& line, int& pos) {
     if(tokenizeId(line, pos)) return;
     if(tokenizeNum(line, pos)) return;
     if(tokenizeStr(line, pos)) return;
-    fprintf(stderr, "**ERROR** unexpected char: '%c'\n", line[pos]);
-    exit(-1);
+    throw LexerError(string("unexpected char: '") + line[pos] + "'");
 }
 
 bool 
 Lexer::skip(string& line, int& pos) {
-    if(line[pos] == ' ') {
+    if(line[pos] == ' ' || line[pos] == '\t' || line[pos] == '\r') {
         pos++;
         return true;
     }
@@ -92,7 +104,7 @@ Lexer::skip(string& line, int& pos) {
 
 bool
 Lexer::comment(string& line, int& pos) {
-    if(line[pos] == '/' && line[pos+1] == '/') {
+    if(pos + 1 < line.size() && line[pos] == '/' && line[pos+1] == '/') {
         pos = line.size();
         return true;
     }
@@ -113,7 +125,7 @@ bool
 Lexer::tokenizeOperator(string& line, int& pos, int type, string op) {
     int cur = pos;
     for(const auto c: op) {
-        if(line[cur++] != c) return false;
+        if(cur >= line.size() || line[cur++] != c) return false;
     }
     Token token;
     token.type = type;
@@ -125,8 +137,10 @@ Lexer::tokenizeOperator(string& line, int& pos, int type, string op) {
 bool
 Lexer::tokenizeKeyword(string& line, int& pos, int type, string keyword) {
     int cur = pos;
-    for(const auto c: keyword) { if(line[cur++] != c) return false; }
-    if(isalnum(line[cur])) return false;
+    for(const auto c: keyword) { 
+        if(cur >= line.size() || line[cur++] != c) return false; 
+    }
+    if(cur < line.size() && (isalnum(line[cur]) || line[cur] == '_')) return false;
     Token token;
     token.type = type;
     tokens.push_back(token);
@@ -138,7 +152,10 @@ bool
 Lexer::tokenizeId(string& line, int& pos) {
     int start = pos;
     if(!isalpha(line[start]) && line[start] != '_') return false;
-    while(isalnum(line[pos]) || line[pos] == '_') pos++;
+    while(pos < line.size() && (isalnum(line[pos]) || line[pos] == '_')) pos++;
+    if(pos - start > (int)Token::MAX_IDENTIFIER_LENGTH) {
+        throw LexerError("identifier exceeds maximum length of 128 characters");
+    }
     tokens.push_back(Token::make_id(line.substr(start, pos - start)));
     return true;
 }

@@ -21,6 +21,7 @@ public:
     Program *parse(vector<Token>&);
     Script *parse_script(vector<Token>&, int&);
     Event *parse_event(vector<Token>&, int&);
+    SequentialCommand *parse_sequential_command(vector<Token>&, int&);
     Statement *parse_statement(vector<Token>&, int&);
     Statement *parse_block(vector<Token>&, int&);
     Statement *parse_loop(vector<Token>&, int&);

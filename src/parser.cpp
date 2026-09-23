@@ -26,31 +26,82 @@ Parser::parse_script(vector<Token>& tokens, int& pos) {
     if(!(token = consume(tokens, pos, Token::TK_ID))) throw ParseError("expected '<ID>'");
     Script *script = new Script(token->id);
     if(!consume(tokens, pos, ':')) throw ParseError("expected ':'");
-    while(!consume(tokens, pos, Token::KW_END)) script->add(parse_event(tokens, pos));
+
+    while(!consume(tokens, pos, Token::KW_END)) {
+        if(pos >= tokens.size() || tokens[pos].type == Token::TK_EOF) {
+            throw ParseError("expected 'end'");
+        }
+
+        // 1. シーケンシャルコマンド: @command(...)
+        if(consume(tokens, pos, Token::OP_AT)) {
+            SequentialCommand *cmd = parse_sequential_command(tokens, pos);
+            script->add_sequential(cmd);
+            continue;
+        }
+
+        // 2. 割り込みイベント: interrupt <cond>: { ... }
+        if(consume(tokens, pos, Token::KW_INTERRUPT)) {
+            Expression *cond = parse_expression(tokens, pos);
+            if(!consume(tokens, pos, ':')) throw ParseError("expected ':' after interrupt condition");
+            Statement *body = parse_statement(tokens, pos);
+            script->add_interrupt(new InterruptEvent(body, cond));
+            continue;
+        }
+
+        // 3. カスタムイベント: <ID>: { ... }
+        if(tokens[pos].type == Token::TK_ID && pos + 1 < tokens.size() && tokens[pos + 1].type == ':') {
+            Token *ev_name = consume(tokens, pos, Token::TK_ID);
+            consume(tokens, pos, ':');
+            Statement *body = parse_statement(tokens, pos);
+            script->add_event(new CustomEvent(ev_name->id, body));
+            continue;
+        }
+
+        // 4. Global変数宣言または一般文
+        if(tokens[pos].type == Token::KW_INT || tokens[pos].type == Token::KW_FLOAT || tokens[pos].type == Token::KW_VAR) {
+            Expression *exp = parse_expression(tokens, pos);
+            if(consume(tokens, pos, ';')) {
+                script->add_global(new ExpressionSt(exp));
+                continue;
+            } else {
+                throw ParseError("expected ';' after variable declaration");
+            }
+        }
+
+        // 5. 一般文
+        Statement *st = parse_statement(tokens, pos);
+        if(st) {
+            script->add_global(st);
+        } else {
+            throw ParseError("unexpected token in script body");
+        }
+    }
     return script;
+}
+
+SequentialCommand *
+Parser::parse_sequential_command(vector<Token>& tokens, int& pos) {
+    Token *token = consume(tokens, pos, Token::TK_ID);
+    if(!token) throw ParseError("expected command name after '@'");
+    vector<Expression *> args;
+    if(consume(tokens, pos, '(')) {
+        while(!consume(tokens, pos, ')')) {
+            args.push_back(parse_expression(tokens, pos));
+            if(consume(tokens, pos, ')')) break;
+            if(!consume(tokens, pos, ',')) throw ParseError("expected ','");
+        }
+    }
+    consume(tokens, pos, ';'); // セミコロンは省略可能
+    return new SequentialCommand(token->id, args);
 }
 
 Event *
 Parser::parse_event(vector<Token>& tokens, int& pos) {
-    Statement *statement;
-    if(consume(tokens, pos, Token::KW_INIT)) {
-        if(consume(tokens, pos, ':')) {
-            return new InitEvent(parse_statement(tokens, pos));
-        } else {
-            throw ParseError("expected ':'");
-        }
-    } else if(consume(tokens, pos, Token::KW_UPDATE)) {
-        if(consume(tokens, pos, ':')) {
-            return new UpdateEvent(parse_statement(tokens, pos));
-        } else {
-            throw ParseError("expected ':'");
-        }
-    } else if(consume(tokens, pos, Token::KW_RENDER)) {
-        if(consume(tokens, pos, ':')) {
-            return new RenderEvent(parse_statement(tokens, pos));
-        } else {
-            throw ParseError("expected ':'");
-        }
+    if(tokens[pos].type == Token::TK_ID && pos + 1 < tokens.size() && tokens[pos + 1].type == ':') {
+        Token *ev_name = consume(tokens, pos, Token::TK_ID);
+        consume(tokens, pos, ':');
+        Statement *body = parse_statement(tokens, pos);
+        return new CustomEvent(ev_name->id, body);
     } else if(consume(tokens, pos, Token::KW_INTERRUPT)) {
         Expression *cond = parse_expression(tokens, pos);
         if(consume(tokens, pos, ':')) {
@@ -58,8 +109,11 @@ Parser::parse_event(vector<Token>& tokens, int& pos) {
         } else {
             throw ParseError("expected ':'");
         }
-    } else if((statement = parse_statement(tokens, pos))) {
-        return new InitEvent(statement);
+    } else {
+        Statement *statement = parse_statement(tokens, pos);
+        if(statement) {
+            return new CustomEvent("init", statement);
+        }
     }
     return NULL;
 }

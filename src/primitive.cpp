@@ -249,7 +249,7 @@ Primitive::operator[](int index) {
     return dummy;
 }
 
-Primitive::operator int() {
+Primitive::operator int() const {
     switch(type) {
     case INT: return int_val;
     case FLOAT: return (int)float_val;
@@ -261,7 +261,7 @@ Primitive::operator int() {
     }
 }
 
-Primitive::operator double() {
+Primitive::operator double() const {
     switch(type) {
     case FLOAT: return float_val;
     case INT: return (double)int_val;
@@ -271,11 +271,11 @@ Primitive::operator double() {
     }
 }
 
-Primitive::operator unsigned char() {
+Primitive::operator unsigned char() const {
     return (unsigned char)(int)(*this);
 }
 
-Primitive::operator string() {
+Primitive::operator string() const {
     string str = "[";
     switch(type) {
     case ID:

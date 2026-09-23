@@ -1,15 +1,35 @@
 func enemy001:
     var i = 0;
     var x = "Hello, World! ";
+
+    @set_bullet("bullet_01", 3)
+    @delay(2)
+    @dispatch("custom_event")
+
+    init: {
+        print("init event executed");
+    }
+
     update: {
-        loop(10) {
-            Print("Hello, Word!");
+        loop(3) {
+            print(x);
         }
+    }
+
+    custom_event: {
+        print("custom_event triggered via @dispatch!");
+    }
+
+    interrupt (i < 0): {
+        print("interrupt triggered!");
     }
 end
 
 func enemy002:
-    int x;
+    int hp = 100;
+    float speed = 2.5;
+
+    init: {
+        hp = 200;
+    }
 end
-
-

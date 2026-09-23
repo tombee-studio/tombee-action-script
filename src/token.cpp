@@ -64,16 +64,12 @@ Token::operator string() {
         return "[<VAR>]";
     case KW_CASE:
         return "[<CASE>]";
-    case KW_INIT:
-        return "[<INIT>]";
-    case KW_UPDATE:
-        return "[<UPDATE>]";
-    case KW_RENDER:
-        return "[<RENDER>]";
     case KW_INTERRUPT:
         return "[<INTERRUPT>]";
     case KW_END:
         return "[<END>]";
+    case OP_AT:
+        return "[@]";
     case OP_AND:
         return "[&&]";
     case OP_OR:

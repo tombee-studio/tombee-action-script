@@ -23,4 +23,13 @@ Program::add(string name, Ast* ast) {
     _registered[name] = ast;
 }
 
+Script*
+Program::get_script(string name) {
+    auto it = _registered.find(name);
+    if (it != _registered.end()) {
+        return dynamic_cast<Script*>(it->second);
+    }
+    return nullptr;
+}
+
 } // namespace tas

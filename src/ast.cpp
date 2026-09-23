@@ -17,116 +17,163 @@ tuple<vector<TACOperand>, vector<int>> Program::tac(string name) {
   return tuple<vector<TACOperand>, vector<int>>(codes, entries);
 }
 
-void InitEvent::print(int _tab) { _statement->print(_tab); }
-
-void InitEvent::print_tac() {
-  cout << "init: " << endl;
-  _statement->print_tac();
+Script::~Script() {
+    for (auto g : _globals) g->free();
+    for (auto cmd : _seq_commands) cmd->free();
+    for (auto p : _events) p.second->free();
+    for (auto intr : _interrupts) intr->free();
 }
 
-void InitEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
-  if (entries.size() < 3) {
-    entries.resize(3);
-  }
-  entries[0] = 0;
-  _statement->tac(operands, entries);
-  operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
-                                      Primitive::make_int(0)));
+void CustomEvent::print(int _tab) {
+    tab(_tab);
+    cout << _name << ": ";
+    _statement->print(_tab);
 }
 
-void UpdateEvent::print(int _tab) {
-  tab(_tab);
-  cout << "update: ";
-  _statement->print(_tab);
+void CustomEvent::print_tac() {
+    cout << _name << ": " << endl;
+    _statement->print_tac();
 }
 
-void UpdateEvent::print_tac() {
-  cout << "update: " << endl;
-  _statement->print_tac();
-}
-
-void UpdateEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
-  if (entries.size() < 3) {
-    entries.resize(3);
-  }
-  entries[1] = operands.size();
-  _statement->tac(operands, entries);
-  operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
-                                      Primitive::make_int(0)));
-}
-
-void RenderEvent::print(int _tab) {
-  tab(_tab);
-  cout << "render: ";
-  _statement->print(_tab);
-}
-
-void RenderEvent::print_tac() {
-  cout << "render: " << endl;
-  _statement->print_tac();
-}
-
-void RenderEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
-  if (entries.size() < 3) {
-    entries.resize(3);
-  }
-  entries[2] = operands.size();
-  _statement->tac(operands, entries);
-  operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
-                                      Primitive::make_int(0)));
+void CustomEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
+    _statement->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
 }
 
 void InterruptEvent::print(int _tab) {
-  tab(_tab);
-  cout << "interrupt ";
-  _cond->print(_tab);
-  cout << ": ";
-  _statement->print(_tab);
+    tab(_tab);
+    cout << "interrupt ";
+    _cond->print(_tab);
+    cout << ": ";
+    _statement->print(_tab);
 }
 
 void InterruptEvent::print_tac() {
-  cout << "interrupt: " << endl;
-  _cond->print_tac();
-  cout << "JE 2" << endl;
-  cout << "EXIT" << endl;
-  _statement->print_tac();
-  cout << "EXIT" << endl;
+    cout << "interrupt: " << endl;
+    _cond->print_tac();
+    cout << "JE 2" << endl;
+    cout << "EXIT" << endl;
+    _statement->print_tac();
+    cout << "EXIT" << endl;
 }
 
 void InterruptEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
-  if (entries.size() < 3) {
-    entries.resize(3);
-  }
-  entries.push_back(operands.size());
-  _cond->tac(operands, entries);
-  operands.push_back(TACOperand::make(TACOperand::JE, Primitive::NONE,
-                                      Primitive::make_int(2)));
-  operands.push_back(TACOperand::make(TACOperand::NEXT, Primitive::NONE,
-                                      Primitive::make_int(0)));
-  _statement->tac(operands, entries);
-  operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
-                                      Primitive::make_int(0)));
+    int cond_start = (int)operands.size();
+    entries.push_back(cond_start);
+    _cond->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::JE, Primitive::NONE,
+                                        Primitive::make_int(2)));
+    operands.push_back(TACOperand::make(TACOperand::NEXT, Primitive::NONE,
+                                        Primitive::make_int(0)));
+    _statement->tac(operands, entries);
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
+                                        Primitive::make_int(0)));
+}
+
+void SequentialCommand::print(int _tab) {
+    tab(_tab);
+    cout << "@" << _id << "(";
+    for (size_t i = 0; i < _args.size(); i++) {
+        _args[i]->print(_tab);
+        if (i + 1 < _args.size()) cout << ", ";
+    }
+    cout << ")" << endl;
+}
+
+void SequentialCommand::print_tac() {
+    cout << "@" << _id << endl;
+}
+
+void SequentialCommand::tac(vector<TACOperand> &operands, vector<int> &entries) {
+    if (_id == "delay" && _args.size() >= 1) {
+        _args[0]->tac(operands, entries);
+        operands.push_back(TACOperand::make(TACOperand::DELAY, Primitive::NONE, Primitive::make_none()));
+    } else if (_id == "dispatch" && _args.size() >= 1) {
+        _args[0]->tac(operands, entries);
+        operands.push_back(TACOperand::make(TACOperand::DISPATCH, Primitive::NONE, Primitive::make_none()));
+    } else if (_id == "yield") {
+        operands.push_back(TACOperand::make(TACOperand::YIELD, Primitive::NONE, Primitive::make_none()));
+    } else {
+        for (int i = (int)_args.size() - 1; i >= 0; i--) {
+            _args[i]->tac(operands, entries);
+        }
+        operands.push_back(TACOperand::make(TACOperand::CALL, Primitive::NONE,
+                                            Primitive::make_id(_id), (int)_args.size()));
+        operands.push_back(TACOperand::make(TACOperand::POP, Primitive::NONE, Primitive::make_int(0)));
+    }
+}
+
+void Script::add(Event *event) {
+    if (auto ce = dynamic_cast<CustomEvent*>(event)) {
+        _events[ce->name()] = ce;
+    } else if (auto ie = dynamic_cast<InterruptEvent*>(event)) {
+        _interrupts.push_back(ie);
+    }
 }
 
 void Script::print(int tab) {
-  cout << "func " << _id << ": " << endl;
-  for (auto event : _events) {
-    event->print(tab + 1);
-  }
-  cout << "end" << endl;
+    cout << "func " << _id << ":" << endl;
+    for (auto g : _globals) {
+        g->print(tab + 1);
+    }
+    for (auto cmd : _seq_commands) {
+        cmd->print(tab + 1);
+    }
+    for (auto p : _events) {
+        p.second->print(tab + 1);
+    }
+    for (auto intr : _interrupts) {
+        intr->print(tab + 1);
+    }
+    cout << "end" << endl;
 }
 
 void Script::print_tac() {
-  cout << "func " << _id << ": " << endl;
-  for (auto event : _events) {
-    event->print_tac();
-  }
+    cout << "func " << _id << ":" << endl;
+    for (auto p : _events) {
+        p.second->print_tac();
+    }
 }
 
 void Script::tac(vector<TACOperand> &operands, vector<int> &entries) {
-  for (auto event : _events) {
-    event->tac(operands, entries);
-  }
+    _event_entries.clear();
+    _interrupt_entries.clear();
+    _seq_entry_pc = -1;
+
+    if (entries.size() < 3) {
+        entries.assign(3, 0);
+    }
+
+    // 1. Global変数初期化コード
+    for (auto g : _globals) {
+        g->tac(operands, entries);
+    }
+
+    // 2. シーケンシャルコマンド
+    if (!_seq_commands.empty()) {
+        _seq_entry_pc = (int)operands.size();
+        for (auto cmd : _seq_commands) {
+            cmd->tac(operands, entries);
+        }
+        operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
+    }
+
+    // 3. カスタムイベント
+    for (auto p : _events) {
+        int pc = (int)operands.size();
+        _event_entries[p.first] = pc;
+        if (p.first == "init") entries[0] = pc;
+        else if (p.first == "update") entries[1] = pc;
+        else if (p.first == "render") entries[2] = pc;
+        p.second->tac(operands, entries);
+    }
+
+    // 4. 割り込みイベント
+    for (auto intr : _interrupts) {
+        int cond_pc = (int)operands.size();
+        intr->tac(operands, entries);
+        _interrupt_entries.push_back({cond_pc, cond_pc});
+    }
 }
 
 void IfSt::print(int _tab) {

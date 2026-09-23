@@ -48,12 +48,12 @@ struct Primitive {
     Primitive& operator%(const Primitive& other);
     Primitive& operator[](int);
 
-    operator int();
-    operator double();
-    operator string();
-    operator unsigned char();
+    operator int() const;
+    operator double() const;
+    operator string() const;
+    operator unsigned char() const;
     template<class T>
-    operator T() { return (T)data; }
+    operator T() const { return (T)data; }
 };
 
 } // namespace tas

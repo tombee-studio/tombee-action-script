@@ -9,12 +9,18 @@
 namespace tas {
 using namespace std;
 
+class LexerError: public runtime_error {
+public:
+    LexerError(const string& msg): runtime_error(msg) {}
+};
+
 class Lexer {
     vector<Token> tokens;
     Lexer() {}
 public:
     static Lexer* getInstance();
     vector<Token> lex(string);
+    vector<Token> lex_string(string);
 private:
     void tokenize(string&, int&);
     bool tokenizeOperator(string&, int&, char);

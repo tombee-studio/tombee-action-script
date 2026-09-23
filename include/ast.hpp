@@ -55,62 +55,101 @@ public:
     virtual void print_tac() = 0;
 };
 
-class InitEvent: public Event {
+class CustomEvent: public Event {
+    string _name;
 public:
-    InitEvent(Statement *statement): Event(statement) {}
+    CustomEvent(string name, Statement *statement): Event(statement), _name(name) {}
     virtual void print(int);
     virtual void print_tac();
-
     virtual void tac(vector<TACOperand>&, vector<int>&);
-};
 
-class UpdateEvent: public Event {
-public:
-    UpdateEvent(Statement *statement): Event(statement) {}
-    virtual void print(int);
-    virtual void print_tac();
-
-    virtual void tac(vector<TACOperand>&, vector<int>&);
-};
-
-class RenderEvent: public Event {
-public:
-    RenderEvent(Statement *statement): Event(statement) {}
-    virtual void print(int);
-    virtual void print_tac();
-
-    virtual void tac(vector<TACOperand>&, vector<int>&);
+    string name() const { return _name; }
+    Statement* statement() { return _statement; }
 };
 
 class InterruptEvent: public Event {
     Expression *_cond;
 protected:
-    virtual ~InterruptEvent() { _cond->free(); Event::~Event(); }
+    virtual ~InterruptEvent() { _cond->free(); }
 public:
     InterruptEvent(Statement *statement, Expression *cond): Event(statement), _cond(cond) {}
     virtual void print(int);
     virtual void print_tac();
-
     virtual void tac(vector<TACOperand>&, vector<int>&);
+
+    Expression* cond() { return _cond; }
+    Statement* statement() { return _statement; }
+};
+
+class InitEvent: public CustomEvent {
+public:
+    InitEvent(Statement *statement): CustomEvent("init", statement) {}
+};
+
+class UpdateEvent: public CustomEvent {
+public:
+    UpdateEvent(Statement *statement): CustomEvent("update", statement) {}
+};
+
+class RenderEvent: public CustomEvent {
+public:
+    RenderEvent(Statement *statement): CustomEvent("render", statement) {}
+};
+
+class SequentialCommand: public Ast {
+    string _id;
+    vector<Expression *> _args;
+protected:
+    virtual ~SequentialCommand() {
+        for(auto arg: _args) {
+            arg->free();
+        }
+        Ast::~Ast();
+    }
+public:
+    SequentialCommand(string id, vector<Expression *> args): _id(id), _args(args) {}
+    virtual void print(int);
+    virtual void print_tac();
+    virtual void tac(vector<TACOperand>&, vector<int>&);
+
+    string id() const { return _id; }
+    const vector<Expression *>& args() const { return _args; }
 };
 
 class Script: public Ast {
     string _id;
-    vector<Event *> _events;
+    vector<Ast *> _globals;
+    vector<SequentialCommand *> _seq_commands;
+    map<string, CustomEvent *> _events;
+    vector<InterruptEvent *> _interrupts;
+
+    int _seq_entry_pc;
+    map<string, int> _event_entries;
+    vector<pair<int, int>> _interrupt_entries;
 protected:
-    virtual ~Script() {
-        for(auto event: _events) { event->free(); }
-        Ast::~Ast();
-    }
+    virtual ~Script();
 public:
-    Script(string id): _id(id) {}
+    Script(string id): _id(id), _seq_entry_pc(-1) {}
 
     virtual void print(int);
     virtual void print_tac();
     virtual void tac(vector<TACOperand>&, vector<int>&);
 
-    void add(Event *event) { _events.push_back(event); }
-    string id() { return _id; }
+    void add_global(Ast *ast) { _globals.push_back(ast); }
+    void add_sequential(SequentialCommand *cmd) { _seq_commands.push_back(cmd); }
+    void add_event(CustomEvent *event) { _events[event->name()] = event; }
+    void add_interrupt(InterruptEvent *intr) { _interrupts.push_back(intr); }
+
+    void add(Event *event);
+
+    string id() const { return _id; }
+    int seq_entry_pc() const { return _seq_entry_pc; }
+    const map<string, int>& event_entries() const { return _event_entries; }
+    const vector<pair<int, int>>& interrupt_entries() const { return _interrupt_entries; }
+    const vector<Ast *>& globals() const { return _globals; }
+    const vector<SequentialCommand *>& seq_commands() const { return _seq_commands; }
+    const map<string, CustomEvent *>& events() const { return _events; }
+    const vector<InterruptEvent *>& interrupts() const { return _interrupts; }
 };
 
 class IfSt: public Statement {
@@ -472,6 +511,8 @@ public:
     tuple<vector<TACOperand>, vector<int>> tac(string);
 
     void add(string name, Ast *ast);
+    Script* get_script(string name);
+    const map<string, Ast*>& registered() const { return _registered; }
 };
 
 } // namespace tas

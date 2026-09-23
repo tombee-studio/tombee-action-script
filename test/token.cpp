@@ -1,5 +1,7 @@
 #include "../include/token.hpp"
 
+using namespace tas;
+
 int
 main() {
     Token token1 = Token::make_int(0);

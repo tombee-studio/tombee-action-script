@@ -1,13 +1,197 @@
 #include "../include/cpu.hpp"
+#include "../include/ast.hpp"
 
 namespace tas {
 
+CPU::CPU(): 
+    _data(nullptr), 
+    _isExit(false), 
+    _pc(0), 
+    _sp(0), 
+    _seq_pc(-1), 
+    _delay_ticks(0), 
+    _seq_state(IDLE) 
+{
+}
+
 void 
-CPU::run() {
+CPU::set(vector<TACOperand>& codes) { 
+    set_codes(codes);
+}
+
+void
+CPU::set_codes(const vector<TACOperand>& codes, const map<string, int>& event_entries, int seq_entry_pc, const vector<pair<int, int>>& interrupt_entries) {
+    _codes = codes;
+    _event_entries = event_entries;
+    _seq_pc = seq_entry_pc;
+    _interrupt_entries = interrupt_entries;
+    _table.clear();
+    _table.push_back(map<string, Primitive>());
+    _global_table.clear();
+    _seq_state = (_seq_pc >= 0) ? IDLE : FINISHED;
+    _delay_ticks = 0;
+    _isExit = false;
+    _pc = 0;
+    _sp = 0;
+    loops.clear();
+}
+
+void
+CPU::set_script(Script* script) {
+    if (!script) return;
+    vector<TACOperand> codes;
+    vector<int> entries;
+    script->tac(codes, entries);
+    set_codes(codes, script->event_entries(), script->seq_entry_pc(), script->interrupt_entries());
+    
+    // Global変数の初期化コードがあれば実行
+    if (!_codes.empty() && (_seq_pc > 0 || (!_event_entries.empty() && _event_entries.begin()->second > 0))) {
+        int init_end = (_seq_pc >= 0) ? _seq_pc : _event_entries.begin()->second;
+        _pc = 0;
+        _sp = 0;
+        _isExit = false;
+        while (_pc < init_end && !_isExit) {
+            step();
+        }
+    }
+}
+
+void 
+CPU::start(int pc) {
+    _pc = pc;
+    _sp = 0;
+    _isExit = false;
+    _table.clear();
+    _table.push_back(map<string, Primitive>());
+    loops.clear();
+}
+
+void
+CPU::start_sequential() {
+    if (_seq_pc >= 0) {
+        _seq_state = RUNNING;
+        _delay_ticks = 0;
+    } else {
+        _seq_state = FINISHED;
+    }
+}
+
+void
+CPU::step_sequential() {
+    if (_seq_state == IDLE) {
+        start_sequential();
+    }
+    if (_seq_state == SUSPENDED) {
+        if (_delay_ticks > 0) {
+            _delay_ticks--;
+        }
+        if (_delay_ticks <= 0) {
+            _seq_state = RUNNING;
+        }
+    }
+    if (_seq_state == RUNNING) {
+        while (_seq_state == RUNNING && _seq_pc >= 0 && _seq_pc < (int)_codes.size()) {
+            _pc = _seq_pc;
+            TACOperand code = _codes[_pc];
+            if (code.mnemonic == TACOperand::EXIT) {
+                _seq_state = FINISHED;
+                _seq_pc++;
+                break;
+            } else if (code.mnemonic == TACOperand::DELAY) {
+                Primitive p = pop();
+                _delay_ticks = (int)p;
+                _seq_state = SUSPENDED;
+                _seq_pc++;
+                break;
+            } else if (code.mnemonic == TACOperand::YIELD) {
+                _delay_ticks = 1;
+                _seq_state = SUSPENDED;
+                _seq_pc++;
+                break;
+            } else if (code.mnemonic == TACOperand::DISPATCH) {
+                Primitive p = pop();
+                dispatch((string)p);
+                _seq_pc++;
+            } else {
+                step();
+                _seq_pc = _pc;
+            }
+        }
+    }
+}
+
+void
+CPU::dispatch(const string& event_name) {
+    auto it = _event_entries.find(event_name);
+    if (it == _event_entries.end() || it->second < 0 || it->second >= (int)_codes.size()) {
+        return;
+    }
+    int save_pc = _pc;
+    bool save_exit = _isExit;
+    int save_sp = _sp;
+    auto save_table = _table;
+    auto save_loops = loops;
+
+    start(it->second);
+    while (!_isExit && _pc < (int)_codes.size()) {
+        step();
+    }
+
+    _pc = save_pc;
+    _isExit = save_exit;
+    _sp = save_sp;
+    _table = save_table;
+    loops = save_loops;
+}
+
+void
+CPU::check_interrupts() {
+    for (const auto& intr : _interrupt_entries) {
+        int cond_pc = intr.first;
+        int handler_pc = intr.second;
+
+        int save_pc = _pc;
+        bool save_exit = _isExit;
+        int save_sp = _sp;
+        auto save_table = _table;
+
+        start(cond_pc);
+        while (!_isExit && _pc < (int)_codes.size()) {
+            step();
+        }
+        Primitive res = pop();
+
+        _pc = save_pc;
+        _isExit = save_exit;
+        _sp = save_sp;
+        _table = save_table;
+
+        if ((int)res != 0) {
+            dispatch_handler:
+            start(handler_pc);
+            while (!_isExit && _pc < (int)_codes.size()) {
+                step();
+            }
+            _pc = save_pc;
+            _isExit = save_exit;
+            _sp = save_sp;
+            _table = save_table;
+        }
+    }
+}
+
+void
+CPU::step() {
+    if (_pc < 0 || _pc >= (int)_codes.size()) {
+        _isExit = true;
+        return;
+    }
     TACOperand code = _codes[_pc];
     switch(code.mnemonic) {
     case TACOperand::EXIT:
         _isExit = true;
+        break;
+    case TACOperand::NEXT:
         break;
     case TACOperand::PUSH:
         push(code.value);
@@ -24,6 +208,9 @@ CPU::run() {
     case TACOperand::DECL:
         declare(code);
         break;
+    case TACOperand::GLOBAL_DECL:
+        declare_global((string)code.value);
+        break;
     case TACOperand::LOAD:
         load();
         break;
@@ -37,33 +224,16 @@ CPU::run() {
         jmp(code);
         break;
     case TACOperand::EQ:
-        expr(code);
-        break;
     case TACOperand::NE:
-        expr(code);
-        break;
     case TACOperand::LT:
-        expr(code);
-        break;
     case TACOperand::LE:
-        expr(code);
-        break;
     case TACOperand::GT:
-        expr(code);
-        break;
     case TACOperand::GE:
-        expr(code);
-        break;
     case TACOperand::ADD:
-        expr(code);
-        break;
     case TACOperand::SUB:
-        expr(code);
-        break;
     case TACOperand::MUL:
-        expr(code);
-        break;
     case TACOperand::DIV:
+    case TACOperand::MOD:
         expr(code);
         break;
     case TACOperand::REV:
@@ -88,8 +258,29 @@ CPU::run() {
             loops.pop_back();
         }
         break;
+    case TACOperand::DELAY: {
+        Primitive p = pop();
+        _delay_ticks = (int)p;
+        _seq_state = SUSPENDED;
+        break;
+    }
+    case TACOperand::DISPATCH: {
+        Primitive p = pop();
+        dispatch((string)p);
+        break;
+    }
+    case TACOperand::YIELD: {
+        _delay_ticks = 1;
+        _seq_state = SUSPENDED;
+        break;
+    }
     }
     _pc++;
+}
+
+void 
+CPU::run() {
+    step();
 }
 
 void 
@@ -105,24 +296,38 @@ CPU::call(TACOperand code) {
 void 
 CPU::print() {
     cout << "================" << endl;
-    _codes[_pc].print();
+    if (_pc >= 0 && _pc < (int)_codes.size()) {
+        _codes[_pc].print();
+    }
     cout << "--------" << endl;
     for(int i = 0; i < _sp; i++) {
         cout << i << ": " << (string)_stack[i] << endl;
     }
-    cout << "--------" << endl;
-    for(auto table: _table) {
-        for(auto var: table) {
+    cout << "---- Local Tables ----" << endl;
+    for(const auto& table: _table) {
+        for(const auto& var: table) {
             cout << var.first << ": " << (string)var.second << endl;
         }
+    }
+    cout << "---- Global Table ----" << endl;
+    for(const auto& var: _global_table) {
+        cout << var.first << ": " << (string)var.second << endl;
     }
     cout << "----------------" << endl;
 }
 
+void
+CPU::declare_global(const string& id, Primitive val) {
+    _global_table[id] = val;
+}
+
 void 
 CPU::declare(TACOperand code) {
-    if(!_table.size()) _table.push_back(map<string, Primitive>());
-    _table.back()[(string)code.value] = Primitive::make_none();
+    if (_table.empty()) {
+        _global_table[(string)code.value] = Primitive::make_none();
+    } else {
+        _table.back()[(string)code.value] = Primitive::make_none();
+    }
 }
 
 void 
@@ -227,9 +432,10 @@ CPU::assign() {
     Primitive *target = find((string)p2);
     if(!target) {
         if (_table.empty()) {
-            _table.push_back(map<string, Primitive>());
+            _global_table[(string)p2] = p1;
+        } else {
+            _table.back()[(string)p2] = p1;
         }
-        _table.back()[(string)p2] = p1;
     } else {
         *target = p1;
     }
@@ -261,6 +467,10 @@ CPU::find(string id) {
         if (it != _table[i].end()) {
             return &(it->second);
         }
+    }
+    auto it = _global_table.find(id);
+    if (it != _global_table.end()) {
+        return &(it->second);
     }
     return NULL;
 }
