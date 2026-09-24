@@ -26,7 +26,6 @@ CPU::set_codes(const vector<TACOperand>& codes, const map<string, int>& event_en
     _seq_pc = seq_entry_pc;
     _interrupt_entries = interrupt_entries;
     _table.clear();
-    _table.push_back(map<string, Primitive>());
     _global_table.clear();
     _seq_state = (_seq_pc >= 0) ? IDLE : FINISHED;
     _delay_ticks = 0;
@@ -34,6 +33,31 @@ CPU::set_codes(const vector<TACOperand>& codes, const map<string, int>& event_en
     _pc = 0;
     _sp = 0;
     loops.clear();
+
+    // Global変数の初期化コードがあれば実行 (この時は _table.empty() なので _global_table に保存される)
+    if (!_codes.empty()) {
+        int min_entry = (int)_codes.size();
+        if (_seq_pc >= 0 && _seq_pc < min_entry) min_entry = _seq_pc;
+        for (const auto& ev : _event_entries) {
+            if (ev.second >= 0 && ev.second < min_entry) min_entry = ev.second;
+        }
+        for (const auto& intr : _interrupt_entries) {
+            if (intr.first >= 0 && intr.first < min_entry) min_entry = intr.first;
+        }
+        if (min_entry > 0 && min_entry <= (int)_codes.size()) {
+            _pc = 0;
+            _sp = 0;
+            _isExit = false;
+            while (_pc < min_entry && !_isExit && _pc < (int)_codes.size()) {
+                step();
+            }
+        }
+    }
+    _table.clear();
+    _table.push_back(map<string, Primitive>());
+    _pc = 0;
+    _sp = 0;
+    _isExit = false;
 }
 
 void
@@ -43,17 +67,6 @@ CPU::set_script(Script* script) {
     vector<int> entries;
     script->tac(codes, entries);
     set_codes(codes, script->event_entries(), script->seq_entry_pc(), script->interrupt_entries());
-    
-    // Global変数の初期化コードがあれば実行
-    if (!_codes.empty() && (_seq_pc > 0 || (!_event_entries.empty() && _event_entries.begin()->second > 0))) {
-        int init_end = (_seq_pc >= 0) ? _seq_pc : _event_entries.begin()->second;
-        _pc = 0;
-        _sp = 0;
-        _isExit = false;
-        while (_pc < init_end && !_isExit) {
-            step();
-        }
-    }
 }
 
 void 
@@ -90,6 +103,9 @@ CPU::step_sequential() {
         }
     }
     if (_seq_state == RUNNING) {
+        if (_table.empty()) {
+            _table.push_back(map<string, Primitive>());
+        }
         while (_seq_state == RUNNING && _seq_pc >= 0 && _seq_pc < (int)_codes.size()) {
             _pc = _seq_pc;
             TACOperand code = _codes[_pc];
@@ -148,35 +164,24 @@ void
 CPU::check_interrupts() {
     for (const auto& intr : _interrupt_entries) {
         int cond_pc = intr.first;
-        int handler_pc = intr.second;
+        if (cond_pc < 0 || cond_pc >= (int)_codes.size()) continue;
 
         int save_pc = _pc;
         bool save_exit = _isExit;
         int save_sp = _sp;
         auto save_table = _table;
+        auto save_loops = loops;
 
         start(cond_pc);
         while (!_isExit && _pc < (int)_codes.size()) {
             step();
         }
-        Primitive res = pop();
 
         _pc = save_pc;
         _isExit = save_exit;
         _sp = save_sp;
         _table = save_table;
-
-        if ((int)res != 0) {
-            dispatch_handler:
-            start(handler_pc);
-            while (!_isExit && _pc < (int)_codes.size()) {
-                step();
-            }
-            _pc = save_pc;
-            _isExit = save_exit;
-            _sp = save_sp;
-            _table = save_table;
-        }
+        loops = save_loops;
     }
 }
 

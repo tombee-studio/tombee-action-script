@@ -58,16 +58,12 @@ void InterruptEvent::print_tac() {
 }
 
 void InterruptEvent::tac(vector<TACOperand> &operands, vector<int> &entries) {
-    int cond_start = (int)operands.size();
-    entries.push_back(cond_start);
     _cond->tac(operands, entries);
-    operands.push_back(TACOperand::make(TACOperand::JE, Primitive::NONE,
-                                        Primitive::make_int(2)));
-    operands.push_back(TACOperand::make(TACOperand::NEXT, Primitive::NONE,
-                                        Primitive::make_int(0)));
+    operands.push_back(TACOperand::make(TACOperand::JNE, Primitive::NONE, Primitive::make_int(0)));
+    int jumpExit = (int)operands.size() - 1;
     _statement->tac(operands, entries);
-    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE,
-                                        Primitive::make_int(0)));
+    operands.push_back(TACOperand::make(TACOperand::EXIT, Primitive::NONE, Primitive::make_int(0)));
+    operands[jumpExit].value = Primitive::make_int((int)operands.size() - 1);
 }
 
 void SequentialCommand::print(int _tab) {
