@@ -104,7 +104,6 @@ protected:
         for(auto arg: _args) {
             arg->free();
         }
-        Ast::~Ast();
     }
 public:
     SequentialCommand(string id, vector<Expression *> args): _id(id), _args(args) {}
@@ -161,7 +160,6 @@ protected:
         _cond->free();
         _truest->free();
         _elsest->free();
-        Statement::~Statement();
     }
 public:
     IfSt(Expression *cond, Statement *truest, Statement *elsest): _cond(cond), _truest(truest), _elsest(elsest) {}
@@ -179,7 +177,6 @@ public:
     virtual ~Loop() {
         _times->free();
         _body->free();
-        Statement::~Statement();
     }
 
     virtual void print(int);
@@ -194,7 +191,6 @@ protected:
         for(const auto statement: _statements) {
             statement->free();
         }
-        Statement::~Statement();
     }
 public:
     virtual void print(int);
@@ -209,7 +205,6 @@ class ExpressionSt: public Statement {
 protected:
     virtual ~ExpressionSt() {
         _exp->free();
-        Statement::~Statement();
     }
 public:
     ExpressionSt(Expression *exp): _exp(exp) {}
@@ -236,7 +231,7 @@ class Assign: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~Assign() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~Assign() { _left->free(); _right->free(); }
 public:
     Assign(Expression *left, Expression *right): _left(left), _right(right) {}
     virtual void print(int tab);
@@ -250,7 +245,7 @@ class EQExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~EQExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~EQExp() { _left->free(); _right->free(); }
 public:
     EQExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -265,7 +260,7 @@ class NEExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~NEExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~NEExp() { _left->free(); _right->free(); }
 public:
     NEExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -280,7 +275,7 @@ class LTExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~LTExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~LTExp() { _left->free(); _right->free(); }
 public:
     LTExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -295,7 +290,7 @@ class LEExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~LEExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~LEExp() { _left->free(); _right->free(); }
 public:
     LEExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -310,7 +305,7 @@ class GTExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~GTExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~GTExp() { _left->free(); _right->free(); }
 public:
     GTExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -325,7 +320,7 @@ class GEExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~GEExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~GEExp() { _left->free(); _right->free(); }
 public:
     GEExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -340,7 +335,7 @@ class AddExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~AddExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~AddExp() { _left->free(); _right->free(); }
 public:
     AddExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -355,7 +350,7 @@ class SubExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~SubExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~SubExp() { _left->free(); _right->free(); }
 public:
     SubExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -370,7 +365,7 @@ class MulExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~MulExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~MulExp() { _left->free(); _right->free(); }
 public:
     MulExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -385,7 +380,7 @@ class DivExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~DivExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~DivExp() { _left->free(); _right->free(); }
 public:
     DivExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -400,7 +395,7 @@ class ModExp: public Expression {
     Expression *_left;
     Expression *_right;
 protected:
-    virtual ~ModExp() { _left->free(); _right->free(); Expression::~Expression(); }
+    virtual ~ModExp() { _left->free(); _right->free(); }
 public:
     ModExp(Expression *left, Expression *right): _left(left), _right(right) {}
 
@@ -414,7 +409,7 @@ public:
 class MinusUnaryExp: public Expression {
     Expression *_exp;
 protected:
-    virtual ~MinusUnaryExp() { _exp->free(); Expression::~Expression(); }
+    virtual ~MinusUnaryExp() { _exp->free(); }
 public:
     MinusUnaryExp(Expression *exp): _exp(exp) {}
 
@@ -428,7 +423,7 @@ public:
 class IncUnaryExp: public Expression {
     Expression *_exp;
 protected:
-    virtual ~IncUnaryExp() { _exp->free(); Expression::~Expression(); }
+    virtual ~IncUnaryExp() { _exp->free(); }
 public:
     IncUnaryExp(Expression *exp): _exp(exp) {}
 
@@ -442,7 +437,7 @@ public:
 class DecUnaryExp: public Expression {
     Expression *_exp;
 protected:
-    virtual ~DecUnaryExp() { _exp->free(); Expression::~Expression(); }
+    virtual ~DecUnaryExp() { _exp->free(); }
 public:
     DecUnaryExp(Expression *exp): _exp(exp) {}
 
@@ -461,7 +456,6 @@ protected:
         for(auto arg: _args) {
             arg->free();
         }
-        Expression::~Expression();
     }
 public:
     CallExp(string id, vector<Expression *> args): _id(id), _args(args) {}
