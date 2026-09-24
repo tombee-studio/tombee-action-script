@@ -1,0 +1,88 @@
+{
+  "Action Definition": {
+    "prefix": "action",
+    "body": [
+      "action ${1:action_name}(${2:params}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define a TAS action"
+  },
+  "Function Definition": {
+    "prefix": "fn",
+    "body": [
+      "fn ${1:function_name}(${2:params}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define a TAS function"
+  },
+  "Event Handler": {
+    "prefix": "event",
+    "body": [
+      "event ${1:event_name} {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define a custom event handler"
+  },
+  "Interrupt Handler": {
+    "prefix": "interrupt",
+    "body": [
+      "interrupt (${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Define an interrupt handler block"
+  },
+  "Parallel Block": {
+    "prefix": "parallel",
+    "body": [
+      "parallel {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Run sub-actions in parallel"
+  },
+  "Wait Action": {
+    "prefix": "wait",
+    "body": [
+      "wait(${1:1.0});"
+    ],
+    "description": "Wait for duration (seconds)"
+  },
+  "Move To Action": {
+    "prefix": "move_to",
+    "body": [
+      "move_to(${1:target_x}, ${2:target_y}, ${3:duration});"
+    ],
+    "description": "Move entity to coordinates"
+  },
+  "If Statement": {
+    "prefix": "if",
+    "body": [
+      "if (${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "If statement"
+  },
+  "While Loop": {
+    "prefix": "while",
+    "body": [
+      "while (${1:condition}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "While loop"
+  },
+  "For Loop": {
+    "prefix": "for",
+    "body": [
+      "for (${1:i} in ${2:range}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "For in loop"
+  }
+}

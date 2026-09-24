@@ -1,0 +1,48 @@
+{
+  "name": "tas-vscode",
+  "displayName": "Tombee Action Script (TAS) Language Support",
+  "description": "Rich syntax highlighting, bracket matching, and language configuration for Tombee Action Script (TAS).",
+  "version": "0.1.0",
+  "publisher": "tombee-studio",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "tas",
+    "tombee-action-script",
+    "game-script",
+    "language"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "tas",
+        "aliases": [
+          "Tombee Action Script",
+          "tas",
+          "TAS"
+        ],
+        "extensions": [
+          ".tas"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tas",
+        "scopeName": "source.tas",
+        "path": "./syntaxes/tas.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "tas",
+        "path": "./snippets/tas.json"
+      }
+    ]
+  }
+}

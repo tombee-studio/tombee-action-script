@@ -1,5 +1,5 @@
 FORCE:
-.PHONY: FORCE all test library clean
+.PHONY: FORCE all test library clean vscode
 
 SUFFIX   	= .cpp
 SRCDIR   	= ./src
@@ -32,5 +32,11 @@ test: $(TESTS)
 library: $(OBJS) | $(LIBDIR)
 	ar r $(LIBDIR)/libtombeeactionscript.a $(OBJS)
 
+vscode:
+	mkdir -p $(HOME)/.vscode/extensions
+	ln -sfn $(CURDIR)/editors/vscode $(HOME)/.vscode/extensions/tas-vscode
+	@echo "TAS VS Code extension installed to ~/.vscode/extensions/tas-vscode"
+
 clean:
 	rm -rf a.out $(OBJDIR) $(LIBDIR)
+
